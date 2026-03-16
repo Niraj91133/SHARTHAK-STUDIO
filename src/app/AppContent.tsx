@@ -12,6 +12,7 @@ import WhyChooseUsBookFlipSection from "@/components/WhyChooseUsBookFlipSection"
 import InfiniteStripsCTASection from "@/components/InfiniteStripsCTASection";
 import CameraCTASection from "@/components/CameraCTASection";
 
+// Only leave the game as dynamic since it's the absolute heaviest part
 const CoupleShootGame = dynamic(() => import("@/components/CoupleShootGame"), {
     ssr: false,
 });
@@ -20,10 +21,10 @@ export default function AppContent() {
     const lenisRef = useRef<Lenis | null>(null);
 
     useEffect(() => {
+        // Basic Lenis init without complex bounds
         const lenis = new Lenis({
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             smoothWheel: true,
+            duration: 1.2,
         });
 
         lenisRef.current = lenis;
@@ -81,7 +82,7 @@ export default function AppContent() {
     ], []);
 
     return (
-        <main className="min-h-screen bg-black text-white relative">
+        <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
             <HeroScroll
                 title="SHARTHAK STUDIO"
                 eyebrow="SHARTHAK STUDIO"
@@ -94,36 +95,36 @@ export default function AppContent() {
             <CameraCTASection />
 
             {/* Intro Stats Section */}
-            <section className="relative min-h-[50vh] bg-black px-6 py-20 flex items-center justify-center overflow-hidden">
-                <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                    <div className="space-y-8">
-                        <h2 className="text-6xl md:text-8xl font-black leading-none tracking-tighter">
+            <section className="relative min-h-[50vh] bg-black px-6 py-24 flex items-center justify-center overflow-hidden">
+                <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                    <div className="space-y-10">
+                        <h2 className="text-7xl md:text-9xl font-black leading-none tracking-tighter">
                             SHARTHAK<br />STUDIO
                         </h2>
-                        <p className="text-xl text-white/60 max-w-md">
+                        <p className="text-xl text-white/60 max-w-md leading-relaxed">
                             We don&apos;t just take photos. We capture the soul of the moment,
                             refined through cinematic lenses and expert hands.
                         </p>
-                        <div className="flex gap-4">
-                            <button className="px-8 py-3 bg-white text-black font-bold uppercase tracking-widest text-sm hover:invert transition-all">
+                        <div className="flex gap-6">
+                            <button className="px-10 py-4 bg-white text-black font-bold uppercase tracking-[0.2em] text-xs hover:invert transition-all">
                                 View Portfolio
                             </button>
-                            <button className="px-8 py-3 border border-white/20 text-white font-bold uppercase tracking-widest text-sm hover:bg-white hover:text-black transition-all">
+                            <button className="px-10 py-4 border border-white/20 text-white font-bold uppercase tracking-[0.2em] text-xs hover:bg-white hover:text-black transition-all">
                                 The Team
                             </button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-6">
                         {[
                             { label: "YEARS", val: "10+" },
                             { label: "WEDDINGS", val: "500+" },
                             { label: "REELS", val: "2k+" },
                             { label: "HAPPY LIVES", val: "∞" }
                         ].map((stat) => (
-                            <div key={stat.label} className="p-8 border border-white/10 bg-white/5 backdrop-blur-sm group hover:bg-yellow-400 transition-all duration-500">
-                                <div className="text-4xl font-black group-hover:text-black transition-colors">{stat.val}</div>
-                                <div className="text-xs uppercase tracking-[0.2em] text-white/40 group-hover:text-black/60 transition-colors mt-2">{stat.label}</div>
+                            <div key={stat.label} className="p-10 border border-white/10 bg-white/[0.02] backdrop-blur-xl group hover:bg-white hover:text-black transition-all duration-700 cursor-default">
+                                <div className="text-5xl font-black transition-colors">{stat.val}</div>
+                                <div className="text-[10px] uppercase tracking-[0.4em] opacity-40 group-hover:opacity-100 transition-colors mt-3">{stat.label}</div>
                             </div>
                         ))}
                     </div>
@@ -131,10 +132,10 @@ export default function AppContent() {
             </section>
 
             {/* Feature Slider */}
-            <section className="py-20 bg-white text-black overflow-hidden relative">
-                <div className="flex animate-marquee whitespace-nowrap">
+            <section className="py-24 bg-white text-black overflow-hidden relative">
+                <div className="flex animate-marquee whitespace-nowrap will-change-transform">
                     {[...featureLines, ...featureLines].map((line, i) => (
-                        <span key={i} className="text-8xl font-black px-12 tracking-tighter opacity-10 hover:opacity-100 transition-opacity cursor-default">
+                        <span key={i} className="text-9xl font-black px-12 tracking-tighter opacity-10 hover:opacity-100 transition-opacity cursor-default">
                             {line.toUpperCase()}
                         </span>
                     ))}
@@ -156,28 +157,28 @@ export default function AppContent() {
             <InfiniteStripsCTASection />
 
             {/* Footer */}
-            <footer className="bg-black py-20 px-6 border-t border-white/5 text-center">
-                <div className="max-w-4xl mx-auto space-y-12">
-                    <h2 className="text-4xl md:text-7xl font-black tracking-tighter">LET&apos;S CRAFT YOUR STORY</h2>
-                    <div className="flex flex-wrap justify-center gap-8 md:gap-16">
-                        <div className="space-y-2">
-                            <div className="text-[10px] tracking-[0.3em] text-white/40 uppercase">Email Us</div>
-                            <div className="text-xl font-bold">hello@sharthak.studio</div>
+            <footer className="bg-black py-32 px-6 border-t border-white/5 text-center">
+                <div className="max-w-4xl mx-auto space-y-16">
+                    <h2 className="text-5xl md:text-8xl font-black tracking-tightest leading-none">LET&apos;S CRAFT YOUR STORY</h2>
+                    <div className="flex flex-wrap justify-center gap-12 md:gap-24">
+                        <div className="space-y-3">
+                            <div className="text-[10px] tracking-[0.4em] text-white/30 uppercase">Email Us</div>
+                            <div className="text-2xl font-bold">hello@sharthak.studio</div>
                         </div>
-                        <div className="space-y-2">
-                            <div className="text-[10px] tracking-[0.3em] text-white/40 uppercase">Call Us</div>
-                            <div className="text-xl font-bold">+91 98765 43210</div>
+                        <div className="space-y-3">
+                            <div className="text-[10px] tracking-[0.4em] text-white/30 uppercase">Call Us</div>
+                            <div className="text-2xl font-bold">+91 98765 43210</div>
                         </div>
-                        <div className="space-y-2">
-                            <div className="text-[10px] tracking-[0.3em] text-white/40 uppercase">Instagram</div>
-                            <div className="text-xl font-bold">@sharthak_studio</div>
+                        <div className="space-y-3">
+                            <div className="text-[10px] tracking-[0.4em] text-white/30 uppercase">Instagram</div>
+                            <div className="text-2xl font-bold">@sharthak_studio</div>
                         </div>
                     </div>
-                    <div className="pt-20 text-[10px] tracking-[0.5em] text-white/20 uppercase">
+                    <div className="pt-24 text-[10px] tracking-[0.6em] text-white/20 uppercase font-medium">
                         © 2026 SHARTHAK STUDIO. ALL RIGHTS RESERVED.
                     </div>
                 </div>
             </footer>
-        </main>
+        </div>
     );
 }
