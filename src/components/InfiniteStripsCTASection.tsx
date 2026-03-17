@@ -1,62 +1,70 @@
 "use client";
 
 import { useMemo } from "react";
+import { useMedia } from "@/hooks/useMedia";
 
-function buildPicsum(seed: string) {
-  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/1600/900`;
+function DynamicStripTile({ slotId, fallback, idx }: { slotId: string; fallback: string; idx: number }) {
+  const src = useMedia(slotId, fallback);
+  return (
+    <div className="imgmarquee__tile">
+      <img
+        src={src}
+        alt=""
+        loading={idx < 3 ? "eager" : "lazy"}
+        decoding="async"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+        }}
+      />
+    </div>
+  );
 }
 
 export default function InfiniteStripsCTASection() {
-  const topImages = useMemo(
+  const topConfigs = useMemo(
     () => [
-      buildPicsum("strip-top-01"),
-      buildPicsum("strip-top-02"),
-      buildPicsum("strip-top-03"),
-      buildPicsum("strip-top-04"),
-      buildPicsum("strip-top-05"),
-      buildPicsum("strip-top-06"),
+      { id: "strip-top-01", fallback: "https://picsum.photos/seed/strip-0/600/600" },
+      { id: "strip-top-02", fallback: "https://picsum.photos/seed/strip-1/600/600" },
+      { id: "strip-top-03", fallback: "https://picsum.photos/seed/strip-2/600/600" },
+      { id: "strip-top-04", fallback: "https://picsum.photos/seed/strip-3/600/600" },
+      { id: "strip-top-05", fallback: "https://picsum.photos/seed/strip-4/600/600" },
+      { id: "strip-top-06", fallback: "https://picsum.photos/seed/strip-5/600/600" },
     ],
     [],
   );
 
-  const bottomImages = useMemo(
+  const botConfigs = useMemo(
     () => [
-      buildPicsum("strip-bot-01"),
-      buildPicsum("strip-bot-02"),
-      buildPicsum("strip-bot-03"),
-      buildPicsum("strip-bot-04"),
-      buildPicsum("strip-bot-05"),
-      buildPicsum("strip-bot-06"),
+      { id: "strip-bot-01", fallback: "https://picsum.photos/seed/strip-6/600/600" },
+      { id: "strip-bot-02", fallback: "https://picsum.photos/seed/strip-7/600/600" },
+      { id: "strip-bot-03", fallback: "https://picsum.photos/seed/strip-8/600/600" },
+      { id: "strip-bot-04", fallback: "https://picsum.photos/seed/strip-9/600/600" },
+      { id: "strip-bot-05", fallback: "https://picsum.photos/seed/strip-10/600/600" },
+      { id: "strip-bot-06", fallback: "https://picsum.photos/seed/strip-11/600/600" },
     ],
     [],
   );
 
-  const topLoop = [...topImages, ...topImages];
-  const bottomLoop = [...bottomImages, ...bottomImages];
+  const topLoop = [...topConfigs, ...topConfigs];
+  const bottomLoop = [...botConfigs, ...botConfigs];
 
   return (
     <section className="w-full bg-black text-white">
       <div className="w-full overflow-hidden">
         <div className="imgmarquee">
           <div className="imgmarquee__track">
-            {topLoop.map((src, idx) => (
-              <div key={`${src}-${idx}`} className="imgmarquee__tile">
-                {/* Use <img> (not next/image) because source.unsplash.com redirects */}
-                <img
-                  src={src}
-                  alt=""
-                  loading={idx < 3 ? "eager" : "lazy"}
-                  decoding="async"
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: "block",
-                  }}
-                />
-              </div>
+            {topLoop.map((config, idx) => (
+              <DynamicStripTile
+                key={`${config.id}-${idx}`}
+                slotId={config.id}
+                fallback={config.fallback}
+                idx={idx}
+              />
             ))}
           </div>
         </div>
@@ -77,23 +85,13 @@ export default function InfiniteStripsCTASection() {
 
         <div className="imgmarquee imgmarquee--reverse">
           <div className="imgmarquee__track">
-            {bottomLoop.map((src, idx) => (
-              <div key={`${src}-${idx}`} className="imgmarquee__tile">
-                <img
-                  src={src}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: "block",
-                  }}
-                />
-              </div>
+            {bottomLoop.map((config, idx) => (
+              <DynamicStripTile
+                key={`${config.id}-${idx}`}
+                slotId={config.id}
+                fallback={config.fallback}
+                idx={idx}
+              />
             ))}
           </div>
         </div>

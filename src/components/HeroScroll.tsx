@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import Image from "next/image";
+import { useMedia } from "@/hooks/useMedia";
+import { useMediaContext } from "@/context/MediaContext";
 
 function clamp01(value: number) {
   return Math.min(1, Math.max(0, value));
@@ -202,72 +204,103 @@ type HeroScrollProps = {
   title?: string;
   eyebrow?: string;
   tickerText?: string;
-  imageUrl?: string;
-  slides?: { imageUrl: string; category?: string }[];
   headerLogoSrc?: string;
   headerLogoAlt?: string;
 };
+
+// Helper component for each slide image
+function SlideImage({ index, slideT, priority = false }: { index: number; slideT: number; priority?: boolean }) {
+  const slotId = `hero-slide-${String(index + 1).padStart(2, "0")}`;
+  const fallback = `https://picsum.photos/seed/sharthak-${String(index + 1).padStart(2, "0")}/2400/1600`;
+  const src = useMedia(slotId, fallback);
+
+  const local = index === 0 ? 1 : clamp01(slideT - (index - 1));
+  const translateX = index === 0 ? 0 : (1 - local) * 100;
+
+  return (
+    <div
+      className="absolute inset-0 will-change-transform"
+      style={{
+        transform: index === 0 ? "none" : `translate3d(${translateX}%, 0, 0)`,
+        zIndex: index + 1,
+      }}
+    >
+      <Image
+        src={src}
+        alt=""
+        fill
+        priority={priority}
+        sizes="100vw"
+        className="object-cover"
+      />
+    </div>
+  );
+}
+
+// Helper component for detail overlay slide
+function DetailSlide({ index, isVisible }: { index: number; isVisible: boolean }) {
+  const slotId = `hero-slide-${String(index + 1).padStart(2, "0")}`;
+  const fallback = `https://picsum.photos/seed/sharthak-${String(index + 1).padStart(2, "0")}/2400/1600`;
+  const src = useMedia(slotId, fallback);
+
+  return (
+    <div className="relative h-full w-full flex-[0_0_100%]">
+      <Image
+        src={src}
+        alt=""
+        fill
+        sizes="(min-width: 1200px) 1120px, 78vw"
+        className="object-cover"
+        priority={isVisible}
+      />
+    </div>
+  );
+}
 
 export default function HeroScroll({
   title = "SHARTHAK STUDIO",
   eyebrow = "SHARTHAK STUDIO",
   tickerText = "Professional Wedding Photography & Cinematography Team • High Quality Cameras & Cinematic Equipment • 100% Focus on Capturing Real Emotions & Moments • Creative Editing for Photos, Videos & Reels • Experience in Weddings, Maternity, Baby & Event Shoots • On-Time Delivery of Photos & Videos • Friendly & Professional Team That Makes You Comfortable • Affordable Packages with Premium Quality • Trusted by Many Happy Clients • We Turn Your Special Moments Into Beautiful Memories",
-  imageUrl,
-  slides,
   headerLogoSrc = "/logo.svg",
   headerLogoAlt = "Logo",
 }: HeroScrollProps) {
-  const fallbackImageUrl =
-    "https://picsum.photos/seed/sharthak-fallback/2400/1600";
-  const resolvedSlides =
-    slides && slides.length > 0
-      ? slides
-      : [{ imageUrl: imageUrl ?? fallbackImageUrl, category: "" }];
+  const { slots } = useMediaContext();
+  const heroSlots = slots.filter(s => s.section === "Hero Scroll");
+  const slideCount = heroSlots.length || 10;
 
   const sectionRef = useRef<HTMLElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
   const rawProgress = useSectionScrollProgress(sectionRef);
   const progress = prefersReducedMotion ? 0 : rawProgress;
   const [hasScrolled, setHasScrolled] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setHasScrolled(window.scrollY > 4);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
   const headerVisible = rawProgress >= 0.999 && hasScrolled;
 
-  const slideCount = resolvedSlides.length;
-  const totalSegments = slideCount; // 1 segment for intro + (slideCount - 1) slide transitions
+  const totalSegments = slideCount;
   useWheelSnapPaging(sectionRef, totalSegments, !prefersReducedMotion);
-  const tSeg = progress * totalSegments; // 0..totalSegments
-  const intro = clamp01(tSeg); // 0..1
-  const slideT = Math.max(0, tSeg - 1); // 0..(slideCount - 1)
+  const tSeg = progress * totalSegments;
+  const intro = clamp01(tSeg);
+  const slideT = Math.max(0, tSeg - 1);
 
-  const activeSlide = Math.min(
+  const activeSlideIndex = Math.min(
     slideCount - 1,
     Math.max(0, Math.floor(slideT + 1e-6)),
   );
+
   const titleSlideIndex = Math.min(
     slideCount - 1,
     Math.max(0, intro < 1 ? 0 : 1 + Math.floor(slideT + 1e-6)),
   );
-  const category = resolvedSlides[activeSlide]?.category || "";
-  const heroTitle =
-    intro < 1 ? title : (resolvedSlides[titleSlideIndex]?.category || title);
 
-  const overlaySlides = Array.from({ length: 10 }, (_, i) => {
-    const base =
-      resolvedSlides[i] ?? resolvedSlides[i % Math.max(1, resolvedSlides.length)];
-    const fallbackCategory = resolvedSlides[i % Math.max(1, resolvedSlides.length)]
-      ?.category;
-    return {
-      imageUrl:
-        base?.imageUrl ??
-        `https://picsum.photos/seed/sharthak-overlay-${String(i + 1).padStart(2, "0")}/2400/1600`,
-      category: base?.category || fallbackCategory || category || title,
-    };
-  });
+  const currentCategory = heroSlots[activeSlideIndex]?.categoryLabel || "";
+  const heroTitle = intro < 1 ? title : (heroSlots[titleSlideIndex]?.categoryLabel || title);
 
   const detailRef = useRef<HTMLDivElement | null>(null);
   const [detail, setDetail] = useState<null | { startIndex: number }>(null);
@@ -290,9 +323,8 @@ export default function HeroScroll({
     if (prefersReducedMotion) return;
     if (intro < 1) return;
     if (detail) return;
-    const startIndex = Math.min(activeSlide, overlaySlides.length - 1);
-    setDetailIndex(startIndex);
-    setDetail({ startIndex });
+    setDetailIndex(activeSlideIndex);
+    setDetail({ startIndex: activeSlideIndex });
   };
 
   const closeDetail = () => {
@@ -303,45 +335,33 @@ export default function HeroScroll({
   const jumpToNextSection = () => {
     const sectionEl = sectionRef.current;
     if (!sectionEl) return;
+    if (detail) closeDetail();
 
-    if (detail) {
-      closeDetail();
-      window.setTimeout(() => {
-        const top = sectionEl.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({
-          top: Math.round(top + sectionEl.offsetHeight + 1),
-          behavior: prefersReducedMotion ? "auto" : "smooth",
-        });
-      }, 260);
-      return;
-    }
-
-    const top = sectionEl.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({
-      top: Math.round(top + sectionEl.offsetHeight + 1),
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
+    window.setTimeout(() => {
+      const top = sectionEl.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: Math.round(top + sectionEl.offsetHeight + 1),
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      });
+    }, detail ? 260 : 0);
   };
 
   useWheelCarouselPaging(
     detailRef,
     !!detail && !prefersReducedMotion,
-    overlaySlides.length,
+    slideCount,
     () => detailIndexRef.current,
     setDetailIndex,
   );
 
-  const imageHeight = lerp(52, 100, intro); // svh
-  const splitTop = 100 - imageHeight; // svh; where image starts at the top
-
-  const titleTranslateY = lerp(0, 44, intro); // svh
+  const imageHeight = lerp(52, 100, intro);
+  const splitTop = 100 - imageHeight;
+  const titleTranslateY = lerp(0, 44, intro);
   const titleScale = lerp(1, 0.78, intro);
-
   const tickerOpacity = lerp(1, 0, clamp01(intro * 1.4));
   const eyebrowOpacity = lerp(1, 0, clamp01(intro * 1.8));
-
   const categoryOpacity = lerp(0.75, 1, clamp01(intro * 1.2));
-  const categoryTranslateY = lerp(10, 0, clamp01(intro * 1.2)); // px
+  const categoryTranslateY = lerp(10, 0, clamp01(intro * 1.2));
 
   return (
     <section
@@ -367,24 +387,11 @@ export default function HeroScroll({
           className="absolute bottom-8 left-1/2 z-30 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-md"
           style={{ border: "1px solid rgba(255,255,255,0.14)" }}
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6 9L12 15L18 9"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
 
-        {/* Click overlay (no new page) */}
         {detail && (
           <div
             className="absolute inset-0 z-40 bg-black"
@@ -393,10 +400,6 @@ export default function HeroScroll({
               transition: "opacity 200ms ease-out",
             }}
           >
-            {/*
-              Keep the back button and vertical label aligned on the same
-              left gutter, like the reference.
-            */}
             <button
               type="button"
               aria-label="Back"
@@ -408,20 +411,8 @@ export default function HeroScroll({
                 border: "1px solid rgba(255,255,255,0.12)",
               }}
             >
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 18L9 12L15 6"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
 
@@ -443,20 +434,8 @@ export default function HeroScroll({
                       : "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
                   }}
                 >
-                  {overlaySlides.map((slide, idx) => (
-                    <div
-                      key={`${slide.imageUrl}-${idx}`}
-                      className="relative h-full w-full flex-[0_0_100%]"
-                    >
-                      <Image
-                        src={slide.imageUrl}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1200px) 1120px, 78vw"
-                        className="object-cover"
-                        priority={idx === detailIndex}
-                      />
-                    </div>
+                  {Array.from({ length: slideCount }).map((_, idx) => (
+                    <DetailSlide key={idx} index={idx} isVisible={idx === detailIndex} />
                   ))}
                 </div>
               </div>
@@ -471,12 +450,12 @@ export default function HeroScroll({
                 transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
               }}
             >
-              {!!overlaySlides[detailIndex]?.category && (
+              {heroSlots[detailIndex]?.categoryLabel && (
                 <div
                   className="text-[46px] font-extrabold tracking-[0.12em]"
                   style={{ color: "#B6FF00" }}
                 >
-                  {overlaySlides[detailIndex]?.category}
+                  {heroSlots[detailIndex].categoryLabel}
                 </div>
               )}
             </div>
@@ -488,7 +467,6 @@ export default function HeroScroll({
           </div>
         )}
 
-        {/* Image that expands upward to full screen on scroll */}
         <div
           className="absolute bottom-0 left-0 w-full"
           style={{ height: `${imageHeight}svh` }}
@@ -498,49 +476,20 @@ export default function HeroScroll({
             onClick={openDetail}
             style={{ cursor: intro < 1 || detail ? "default" : "pointer" }}
           >
-            {resolvedSlides.map((slide, index) => {
-              if (index === 0) {
-                return (
-                  <div key={slide.imageUrl} className="absolute inset-0">
-                    <Image
-                      src={slide.imageUrl}
-                      alt=""
-                      fill
-                      priority
-                      sizes="100vw"
-                      className="object-cover"
-                    />
-                  </div>
-                );
-	              }
-	
-	              const local = clamp01(slideT - (index - 1)); // 0..1 over its segment
-	              const translateX = (1 - local) * 100; // %
-	              return (
-	                <div
-	                  key={`${slide.imageUrl}-${index}`}
-	                  className="absolute inset-0 will-change-transform"
-	                  style={{
-	                    transform: `translate3d(${translateX}%, 0, 0)`,
-	                    zIndex: index + 1,
-	                  }}
-	                >
-	                  <Image
-	                    src={slide.imageUrl}
-                    alt=""
-                    fill
-                    sizes="100vw"
-                    className="object-cover"
-                  />
-                </div>
-              );
-            })}
+            {Array.from({ length: slideCount }).map((_, index) => (
+              <SlideImage
+                key={index}
+                index={index}
+                slideT={slideT}
+                priority={index === 0}
+              />
+            ))}
           </div>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
           <div className="pointer-events-none absolute inset-x-0 bottom-10 flex justify-center">
-            {!!category && (
+            {!!currentCategory && (
               <div
                 className="text-center text-sm tracking-[0.35em] text-white/95 drop-shadow-[0_2px_20px_rgba(0,0,0,0.8)] sm:text-base"
                 style={{
@@ -548,14 +497,13 @@ export default function HeroScroll({
                   transform: `translate3d(0, ${categoryTranslateY}px, 0)`,
                 }}
               >
-                {category}
+                {currentCategory}
               </div>
             )}
           </div>
         </div>
 
-        {/* Text layer */}
-          <div className="relative z-10 h-full">
+        <div className="relative z-10 h-full">
           <div
             className="absolute inset-x-0 top-14 text-center text-xs tracking-[0.45em] text-white/80"
             style={{ opacity: eyebrowOpacity }}
@@ -590,34 +538,29 @@ export default function HeroScroll({
             </div>
           </div>
 
-	          <div
-	            className="absolute inset-x-0"
-	            style={{
-	              top: `${splitTop}svh`,
-	              opacity: tickerOpacity,
-	            }}
-	          >
-	            <div className="film-ticker">
-	              <div className="film-ticker__perfs" aria-hidden="true" />
-	              <div className="film-ticker__window">
-	                <div className="marquee h-full">
-	                  <div className="marquee__track">
-	                    <span className="marquee__content">{tickerText}</span>
-	                    <span className="marquee__gap" aria-hidden="true">
-	                      {" "}
-	                      •{" "}
-	                    </span>
-	                    <span className="marquee__content" aria-hidden="true">
-	                      {tickerText}
-	                    </span>
-	                  </div>
-	                </div>
-	              </div>
-	              <div className="film-ticker__perfs" aria-hidden="true" />
-	            </div>
-	          </div>
-	        </div>
-	      </div>
-	    </section>
+          <div
+            className="absolute inset-x-0"
+            style={{
+              top: `${splitTop}svh`,
+              opacity: tickerOpacity,
+            }}
+          >
+            <div className="film-ticker">
+              <div className="film-ticker__perfs" aria-hidden="true" />
+              <div className="film-ticker__window">
+                <div className="marquee h-full">
+                  <div className="marquee__track">
+                    <span className="marquee__content">{tickerText}</span>
+                    <span className="marquee__gap" aria-hidden="true"> • </span>
+                    <span className="marquee__content" aria-hidden="true">{tickerText}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="film-ticker__perfs" aria-hidden="true" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

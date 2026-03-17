@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMedia } from "@/hooks/useMedia";
 
 function clampIndex(i: number, len: number) {
   return ((i % len) + len) % len;
@@ -21,14 +22,14 @@ function ExpertiseCard({
   const overlays =
     overlaySide === "left"
       ? [
-          { left: 0, opacity: 0.7 },
-          { left: 25, opacity: 0.42 },
-        ]
+        { left: 0, opacity: 0.7 },
+        { left: 25, opacity: 0.42 },
+      ]
       : overlaySide === "right"
         ? [
-            { left: 75, opacity: 0.7 },
-            { left: 50, opacity: 0.42 },
-          ]
+          { left: 75, opacity: 0.7 },
+          { left: 50, opacity: 0.42 },
+        ]
         : [];
 
   return (
@@ -92,15 +93,26 @@ function ExpertiseCard({
   );
 }
 
+// Wrapper to handle dynamic media
+function DynamicExpertiseImage({ slotId, fallback, ...props }: any) {
+  const src = useMedia(slotId, fallback);
+  return <ExpertiseCard {...props} imageUrl={src} />;
+}
+
+function DynamicLightboxImage({ slotId, fallback, className }: any) {
+  const src = useMedia(slotId, fallback);
+  return <img src={src} className={className} alt="" draggable={false} />;
+}
+
 export default function ExpertiseSection() {
-  const slides = useMemo(
+  const slideConfigs = useMemo(
     () => [
-      "https://picsum.photos/seed/expertise-01/1600/1000",
-      "https://picsum.photos/seed/expertise-02/1600/1000",
-      "https://picsum.photos/seed/expertise-03/1600/1000",
-      "https://picsum.photos/seed/expertise-04/1600/1000",
-      "https://picsum.photos/seed/expertise-05/1600/1000",
-      "https://picsum.photos/seed/expertise-06/1600/1000",
+      { id: "expertise-01", fallback: "https://picsum.photos/seed/expertise-01/1600/1000" },
+      { id: "expertise-02", fallback: "https://picsum.photos/seed/expertise-02/1600/1000" },
+      { id: "expertise-03", fallback: "https://picsum.photos/seed/expertise-03/1600/1000" },
+      { id: "expertise-04", fallback: "https://picsum.photos/seed/expertise-04/1600/1000" },
+      { id: "expertise-05", fallback: "https://picsum.photos/seed/expertise-05/1600/1000" },
+      { id: "expertise-06", fallback: "https://picsum.photos/seed/expertise-06/1600/1000" },
     ],
     [],
   );
@@ -117,18 +129,17 @@ export default function ExpertiseSection() {
   useEffect(() => {
     if (lightboxIndex !== null) return;
     const t = window.setInterval(() => {
-      // Right -> Left movement: next slide comes from the right into center.
       if (isAnimating) return;
       setIsAnimating(true);
       setShiftProgress(1);
       window.setTimeout(() => {
-        setActiveIndex((v) => (v + 1) % slides.length);
+        setActiveIndex((v) => (v + 1) % slideConfigs.length);
         setShiftProgress(0);
         setIsAnimating(false);
       }, 540);
     }, 6200);
     return () => window.clearInterval(t);
-  }, [isAnimating, lightboxIndex, slides.length]);
+  }, [isAnimating, lightboxIndex, slideConfigs.length]);
 
   useEffect(() => {
     const update = () => {
@@ -151,7 +162,7 @@ export default function ExpertiseSection() {
       if (event.key === "Escape") setLightboxIndex(null);
       if (event.key === "ArrowRight") {
         setLightboxIndex((v) =>
-          v === null ? v : Math.min(slides.length - 1, v + 1),
+          v === null ? v : Math.min(slideConfigs.length - 1, v + 1),
         );
       }
       if (event.key === "ArrowLeft") {
@@ -164,19 +175,19 @@ export default function ExpertiseSection() {
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [lightboxIndex, slides.length]);
+  }, [lightboxIndex, slideConfigs.length]);
 
   const close = () => setLightboxIndex(null);
   const prev = () =>
     setLightboxIndex((v) => (v === null ? v : Math.max(0, v - 1)));
   const next = () =>
     setLightboxIndex((v) =>
-      v === null ? v : Math.min(slides.length - 1, v + 1),
+      v === null ? v : Math.min(slideConfigs.length - 1, v + 1),
     );
 
-  const prevIndex = clampIndex(activeIndex - 1, slides.length);
-  const nextIndex = clampIndex(activeIndex + 1, slides.length);
-  const next2Index = clampIndex(activeIndex + 2, slides.length);
+  const prevIndex = clampIndex(activeIndex - 1, slideConfigs.length);
+  const nextIndex = clampIndex(activeIndex + 1, slideConfigs.length);
+  const next2Index = clampIndex(activeIndex + 2, slideConfigs.length);
 
   return (
     <section className="w-full overflow-x-hidden bg-black px-6 py-20 text-white">
@@ -218,7 +229,7 @@ export default function ExpertiseSection() {
               setIsAnimating(true);
               setShiftProgress(1);
               window.setTimeout(() => {
-                setActiveIndex((v) => (v + 1) % slides.length);
+                setActiveIndex((v) => (v + 1) % slideConfigs.length);
                 setShiftProgress(0);
                 setIsAnimating(false);
               }, 540);
@@ -262,10 +273,11 @@ export default function ExpertiseSection() {
                       transformOrigin: "center top",
                     }}
                   >
-                    <ExpertiseCard
+                    <DynamicExpertiseImage
+                      slotId={slideConfigs[idx].id}
+                      fallback={slideConfigs[idx].fallback}
                       overlaySide={overlaySide}
                       dimmed={dimmed}
-                      imageUrl={slides[idx]}
                       onClick={() => setLightboxIndex(idx)}
                     />
                   </div>
@@ -301,19 +313,8 @@ export default function ExpertiseSection() {
             aria-label="Close"
             onClick={close}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M6 6L18 18M18 6L6 18"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
           </button>
 
@@ -324,20 +325,8 @@ export default function ExpertiseSection() {
             onClick={prev}
             disabled={lightboxIndex <= 0}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M15 18L9 12L15 6"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
@@ -346,22 +335,10 @@ export default function ExpertiseSection() {
             className="lightbox__nav lightbox__nav--right"
             aria-label="Next"
             onClick={next}
-            disabled={lightboxIndex >= slides.length - 1}
+            disabled={lightboxIndex >= slideConfigs.length - 1}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 18L15 12L9 6"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
@@ -386,13 +363,12 @@ export default function ExpertiseSection() {
                 transform: `translate3d(${-lightboxIndex * 100}%, 0, 0)`,
               }}
             >
-              {slides.map((src) => (
-                <div key={src} className="lightbox__slide">
-                  <img
+              {slideConfigs.map((config) => (
+                <div key={config.id} className="lightbox__slide">
+                  <DynamicLightboxImage
+                    slotId={config.id}
+                    fallback={config.fallback}
                     className="lightbox__img"
-                    src={src}
-                    alt=""
-                    draggable={false}
                   />
                 </div>
               ))}

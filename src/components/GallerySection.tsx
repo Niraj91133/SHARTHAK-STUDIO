@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMedia } from "@/hooks/useMedia";
 
 type GalleryTab = {
   label: string;
@@ -17,6 +18,14 @@ type GallerySectionProps = {
   tabs: GalleryTab[];
   items: GalleryItem[];
 };
+
+function GalleryImage({ seed, className, isLightbox = false }: { seed: string; className?: string, isLightbox?: boolean }) {
+  const fallback = isLightbox
+    ? `https://picsum.photos/seed/${seed}/2400/1600`
+    : `https://picsum.photos/seed/${seed}/1600/1200`;
+  const src = useMedia(seed, fallback);
+  return <img className={className} src={src} alt="" loading="lazy" draggable={!isLightbox} />;
+}
 
 export default function GallerySection({ tabs, items }: GallerySectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -48,7 +57,6 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
     return () => io.disconnect();
   }, []);
 
-  // Filter tiles based on active tab
   const filteredTiles = useMemo(() => {
     return items.filter(item => item.category === activeTab);
   }, [items, activeTab]);
@@ -103,7 +111,6 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
       className={`gallery-section w-full bg-white px-3 py-16 text-black sm:px-6 sm:py-20 ${revealClass}`}
     >
       <div className="mx-auto w-full max-w-none">
-        {/* Mobile Tabs: Scrollable, no-scrollbar, smaller */}
         <div className="gallery-stagger flex items-center gap-3 sm:gap-8 overflow-x-auto no-scrollbar pb-4 sm:pb-0 sm:justify-center">
           {tabs.map((tab, idx) => {
             const isActive = activeTab === tab.label;
@@ -113,7 +120,7 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
                 type="button"
                 onClick={() => {
                   setActiveTab(tab.label);
-                  setLightboxIndex(null); // Reset lightbox when tab changes
+                  setLightboxIndex(null);
                 }}
                 className={`
                   h-10 sm:h-14 px-5 sm:w-[220px] whitespace-nowrap text-[10px] sm:text-sm font-bold tracking-[0.18em] transition-all duration-300
@@ -137,8 +144,6 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
           }}
         >
           {filteredTiles.map((item, idx) => {
-            // Calculate grid span for mobile
-            // We'll alternate tall/wide items for a dynamic feel
             const mobileGridStyle = {
               gridColumn: idx % 3 === 0 ? "span 1" : (idx % 3 === 1 ? "span 1" : "span 2"),
               gridRow: idx % 4 === 0 ? "span 2" : "span 1",
@@ -169,11 +174,9 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
                 }}
               >
                 <div className="gallery-tile__inner">
-                  <img
+                  <GalleryImage
+                    seed={item.seed}
                     className="gallery-img h-full w-full object-cover"
-                    src={`https://picsum.photos/seed/${item.seed}/1600/1200`}
-                    alt=""
-                    loading="lazy"
                   />
                 </div>
               </div>
@@ -197,19 +200,8 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
             aria-label="Close"
             onClick={closeLightbox}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M6 6L18 18M18 6L6 18"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
           </button>
 
@@ -220,20 +212,8 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
             onClick={goPrev}
             disabled={lightboxIndex <= 0}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M15 18L9 12L15 6"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
@@ -244,20 +224,8 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
             onClick={goNext}
             disabled={lightboxIndex >= filteredTiles.length - 1}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 18L15 12L9 6"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
@@ -284,11 +252,10 @@ export default function GallerySection({ tabs, items }: GallerySectionProps) {
             >
               {filteredTiles.map((item) => (
                 <div key={`lb-${item.seed}`} className="lightbox__slide">
-                  <img
+                  <GalleryImage
+                    seed={item.seed}
                     className="lightbox__img"
-                    src={`https://picsum.photos/seed/${item.seed}/2400/1600`}
-                    alt=""
-                    draggable={false}
+                    isLightbox={true}
                   />
                 </div>
               ))}

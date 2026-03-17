@@ -2,36 +2,76 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMedia } from "@/hooks/useMedia";
 
-type Slide = {
+type SlideConfig = {
+  id: string;
+  fallback: string;
   title?: string;
   subtitle?: string;
-  imageUrl: string;
 };
+
+function DynamicLatestSlide({ config, isActive }: { config: SlideConfig; isActive: boolean }) {
+  const src = useMedia(config.id, config.fallback);
+  return (
+    <div className="latest-work__slide">
+      <div className="relative h-full w-full">
+        <Image
+          src={src}
+          alt=""
+          fill
+          sizes="440px"
+          className="object-cover"
+          priority={isActive}
+        />
+
+        {config.title && (
+          <>
+            <div className="latest-work__view">VIEW</div>
+            <div className="absolute bottom-7 left-6">
+              <div className="text-lg font-extrabold text-white">
+                {config.title}
+              </div>
+              <div className="text-sm text-white/80">
+                {config.subtitle}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function LatestWorkSection() {
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const slides: Slide[] = useMemo(
+  const slides: SlideConfig[] = useMemo(
     () => [
       {
+        id: "latest-work-01",
         title: "Retreat & Rally",
         subtitle: "for Padel United",
-        imageUrl: "https://picsum.photos/seed/latest-work-01/1600/1200",
+        fallback: "https://picsum.photos/seed/latest-work-01/1600/1200",
       },
       {
-        imageUrl: "https://picsum.photos/seed/latest-work-02/1600/1200",
+        id: "latest-work-02",
+        fallback: "https://picsum.photos/seed/latest-work-02/1600/1200",
       },
       {
-        imageUrl: "https://picsum.photos/seed/latest-work-03/1600/1200",
+        id: "latest-work-03",
+        fallback: "https://picsum.photos/seed/latest-work-03/1600/1200",
       },
       {
-        imageUrl: "https://picsum.photos/seed/latest-work-04/1600/1200",
+        id: "latest-work-04",
+        fallback: "https://picsum.photos/seed/latest-work-04/1600/1200",
       },
       {
-        imageUrl: "https://picsum.photos/seed/latest-work-05/1600/1200",
+        id: "latest-work-05",
+        fallback: "https://picsum.photos/seed/latest-work-05/1600/1200",
       },
       {
-        imageUrl: "https://picsum.photos/seed/latest-work-06/1600/1200",
+        id: "latest-work-06",
+        fallback: "https://picsum.photos/seed/latest-work-06/1600/1200",
       },
     ],
     [],
@@ -152,33 +192,12 @@ export default function LatestWorkSection() {
                   transform: `translate3d(${-index * 440}px, 0, 0)`,
                 }}
               >
-                {slides.map((slide, i) => (
-                  <div key={slide.imageUrl} className="latest-work__slide">
-                    <div className="relative h-full w-full">
-                      <Image
-                        src={slide.imageUrl}
-                        alt=""
-                        fill
-                        sizes="440px"
-                        className="object-cover"
-                        priority={i === index}
-                      />
-
-                      {i === 0 && (
-                        <>
-                          <div className="latest-work__view">VIEW</div>
-                          <div className="absolute bottom-7 left-6">
-                            <div className="text-lg font-extrabold text-white">
-                              {slide.title}
-                            </div>
-                            <div className="text-sm text-white/80">
-                              {slide.subtitle}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                {slides.map((config, i) => (
+                  <DynamicLatestSlide
+                    key={config.id}
+                    config={config}
+                    isActive={i === index}
+                  />
                 ))}
               </div>
             </div>

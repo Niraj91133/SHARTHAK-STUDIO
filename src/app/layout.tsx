@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Luxury wedding photography and cinematography studio capturing timeless emotions.",
 };
 
+import { MediaProvider } from "@/context/MediaContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,7 +30,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
         suppressHydrationWarning
       >
-        {children}
+        <MediaProvider>
+          {children}
+        </MediaProvider>
       </body>
     </html>
   );

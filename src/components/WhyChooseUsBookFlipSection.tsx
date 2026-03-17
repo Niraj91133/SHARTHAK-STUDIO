@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useMedia } from "@/hooks/useMedia";
 
 function InlinePhoto({
   src,
@@ -25,21 +26,24 @@ function InlinePhoto({
   );
 }
 
-type AlbumPage = {
+type AlbumPageData = {
   pageNo: number;
   title: ReactNode;
   body: string;
-  heroQuery: string;
-  tiles: string[];
+  heroSlotId: string;
+  heroFallback: string;
+  tileConfigs: { id: string; fallback: string }[];
 };
 
 function Page({
   data,
   rounded,
 }: {
-  data: AlbumPage;
+  data: AlbumPageData;
   rounded: "left" | "right" | "none";
 }) {
+  const heroSrc = useMedia(data.heroSlotId, data.heroFallback);
+
   return (
     <div
       className="h-full w-full bg-white"
@@ -66,9 +70,7 @@ function Page({
       <div className="mt-8 overflow-hidden rounded-[14px]">
         <div className="relative h-[220px] w-full overflow-hidden rounded-[14px]">
           <Image
-            src={`https://source.unsplash.com/featured/2400x1400?${encodeURIComponent(
-              data.heroQuery,
-            )}&sig=${data.pageNo * 10 + 3}`}
+            src={heroSrc}
             alt=""
             fill
             className="object-cover"
@@ -78,29 +80,31 @@ function Page({
       </div>
 
       <div className="mt-8 grid grid-cols-3 gap-3">
-        {data.tiles.map((q, idx) => (
-          <div
-            key={idx}
-            className="relative aspect-[4/3] overflow-hidden rounded-[12px]"
-          >
-            <Image
-              src={`https://source.unsplash.com/featured/1200x900?${encodeURIComponent(
-                q,
-              )}&sig=${data.pageNo * 10 + idx}`}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="180px"
-            />
-          </div>
+        {data.tileConfigs.map((config, idx) => (
+          <Tile key={idx} slotId={config.id} fallback={config.fallback} />
         ))}
       </div>
     </div>
   );
 }
 
+function Tile({ slotId, fallback }: { slotId: string; fallback: string }) {
+  const src = useMedia(slotId, fallback);
+  return (
+    <div className="relative aspect-[4/3] overflow-hidden rounded-[12px]">
+      <Image
+        src={src}
+        alt=""
+        fill
+        className="object-cover"
+        sizes="180px"
+      />
+    </div>
+  );
+}
+
 export default function WhyChooseUsBookFlipSection() {
-  const pages: AlbumPage[] = useMemo(
+  const pages: AlbumPageData[] = useMemo(
     () => [
       {
         pageNo: 1,
@@ -112,8 +116,13 @@ export default function WhyChooseUsBookFlipSection() {
           </>
         ),
         body: "From weddings to family celebrations, we capture real emotions and moments — not poses.",
-        heroQuery: "wedding candid moment",
-        tiles: ["wedding candid smile", "wedding couple hug", "wedding hands rings"],
+        heroSlotId: "why-choose-us-p1-hero",
+        heroFallback: "https://picsum.photos/seed/why-0/1200/1600",
+        tileConfigs: [
+          { id: "why-choose-us-p1-tile-1", fallback: "https://picsum.photos/seed/why-1/1200/1600" },
+          { id: "why-choose-us-p1-tile-2", fallback: "https://picsum.photos/seed/why-2/1200/1600" },
+          { id: "why-choose-us-p1-tile-3", fallback: "https://picsum.photos/seed/why-3/1200/1600" },
+        ],
       },
       {
         pageNo: 2,
@@ -125,29 +134,49 @@ export default function WhyChooseUsBookFlipSection() {
           </>
         ),
         body: "Premium editing, creative shots, perfect lighting, and luxury visuals — delivered in HD with detail‑focused storytelling.",
-        heroQuery: "cinematic wedding couple wide shot",
-        tiles: ["wedding cinematic lighting", "wedding details macro", "wedding couple wide"],
+        heroSlotId: "why-choose-us-p2-hero",
+        heroFallback: "https://picsum.photos/seed/why-4/1200/1600",
+        tileConfigs: [
+          { id: "why-choose-us-p2-tile-1", fallback: "https://picsum.photos/seed/why-5/1200/1600" },
+          { id: "why-choose-us-p2-tile-2", fallback: "https://picsum.photos/seed/why-6/1200/1600" },
+          { id: "why-choose-us-p2-tile-3", fallback: "https://picsum.photos/seed/why-7/1200/1600" },
+        ],
       },
       {
         pageNo: 3,
         title: <>CAPTURE REAL EMOTIONS.</>,
         body: "We focus on real smiles, candid moments, and the energy of your day — so it feels alive forever.",
-        heroQuery: "wedding candid couple",
-        tiles: ["wedding laughter", "wedding candid", "wedding family celebration"],
+        heroSlotId: "why-choose-us-p3-hero",
+        heroFallback: "https://picsum.photos/seed/why-8/1200/1600",
+        tileConfigs: [
+          { id: "why-choose-us-p3-tile-1", fallback: "https://picsum.photos/seed/why-9/1200/1600" },
+          { id: "why-choose-us-p3-tile-2", fallback: "https://picsum.photos/seed/why-10/1200/1600" },
+          { id: "why-choose-us-p3-tile-3", fallback: "https://picsum.photos/seed/why-11/1200/1600" },
+        ],
       },
       {
         pageNo: 4,
         title: <>CINEMATIC VISUALS.</>,
         body: "Smooth reels, color‑perfect frames, and a film‑like look — crafted to match your style.",
-        heroQuery: "wedding film look",
-        tiles: ["wedding sunset couple", "wedding slow motion", "wedding detail bokeh"],
+        heroSlotId: "why-choose-us-p4-hero",
+        heroFallback: "https://picsum.photos/seed/why-12/1200/1600",
+        tileConfigs: [
+          { id: "why-choose-us-p4-tile-1", fallback: "https://picsum.photos/seed/why-13/1200/1600" },
+          { id: "why-choose-us-p4-tile-2", fallback: "https://picsum.photos/seed/why-14/1200/1600" },
+          { id: "why-choose-us-p4-tile-3", fallback: "https://picsum.photos/seed/why-15/1200/1600" },
+        ],
       },
       {
         pageNo: 5,
         title: <>TIMELESS MEMORIES.</>,
         body: "On‑time delivery, friendly team, and a comfortable shoot experience — so you can enjoy your day fully.",
-        heroQuery: "wedding couple portrait outdoors",
-        tiles: ["wedding portrait", "wedding bride", "wedding groom"],
+        heroSlotId: "why-choose-us-p5-hero",
+        heroFallback: "https://picsum.photos/seed/why-16/1200/1600",
+        tileConfigs: [
+          { id: "why-choose-us-p5-tile-1", fallback: "https://picsum.photos/seed/why-17/1200/1600" },
+          { id: "why-choose-us-p5-tile-2", fallback: "https://picsum.photos/seed/why-18/1200/1600" },
+          { id: "why-choose-us-p5-tile-3", fallback: "https://picsum.photos/seed/why-19/1200/1600" },
+        ],
       },
     ],
     [],

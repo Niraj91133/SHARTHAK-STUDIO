@@ -3,6 +3,7 @@
 import { useMemo, useEffect, useRef } from "react";
 import Lenis from "lenis";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
 // Components
 import HeroScroll from "@/components/HeroScroll";
@@ -19,6 +20,7 @@ const CoupleShootGame = dynamic(() => import("@/components/CoupleShootGame"), { 
 
 export default function AppContent() {
     const lenisRef = useRef<Lenis | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
         const lenis = new Lenis({
@@ -41,8 +43,6 @@ export default function AppContent() {
             lenisRef.current = null;
         };
     }, []);
-
-    const categories = useMemo(() => ["PHOTOGRAPHY", "PHOTO EDITING", "VIDEO EDITING"], []);
 
     const featureLines = useMemo(() => [
         "Cinematic Quality", "Premium Editing", "Creative Shots", "Luxury Visuals",
@@ -87,15 +87,25 @@ export default function AppContent() {
         { seed: "gal-18", col: "6 / span 1", row: "5 / span 2", category: "BABY SHOOT" },
     ], []);
 
+    const handleAdminLogin = () => {
+        const id = window.prompt("Enter Admin ID:");
+        if (id === "Sonu Sharthak") {
+            const pass = window.prompt("Enter Password:");
+            if (pass === "0000") {
+                router.push("/admin");
+            } else {
+                alert("Incorrect Password!");
+            }
+        } else if (id !== null) {
+            alert("Incorrect ID!");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
             <HeroScroll
                 title="SHARTHAK STUDIO"
                 eyebrow="SHARTHAK STUDIO"
-                slides={Array.from({ length: 10 }, (_, i) => ({
-                    imageUrl: `https://picsum.photos/seed/sharthak-${String(i + 1).padStart(2, "0")}/2400/1600`,
-                    category: categories[i % categories.length],
-                }))}
             />
 
 
@@ -149,15 +159,15 @@ export default function AppContent() {
 
             <GallerySection tabs={galleryTabs} items={galleryItems} />
 
-            <LatestWorkSection />
-
-            <CoupleShootGame />
-
             <ExpertiseSection />
+
+            <LatestWorkSection />
 
             <VideoEditingTimelineSection />
 
             <WhyChooseUsBookFlipSection />
+
+            <CoupleShootGame />
 
             <CameraCTASection />
 
@@ -181,8 +191,16 @@ export default function AppContent() {
                             <div className="text-2xl font-bold">@sharthak_studio</div>
                         </div>
                     </div>
-                    <div className="pt-24 text-[10px] tracking-[0.6em] text-white/20 uppercase font-medium">
-                        © 2026 SHARTHAK STUDIO. ALL RIGHTS RESERVED.
+                    <div className="pt-24 space-y-6">
+                        <button
+                            onClick={handleAdminLogin}
+                            className="text-[10px] tracking-[0.6em] text-white/20 uppercase font-medium hover:text-white/60 transition-colors"
+                        >
+                            ADMIN LOGIN
+                        </button>
+                        <div className="text-[10px] tracking-[0.6em] text-white/10 uppercase font-medium">
+                            © 2026 SHARTHAK STUDIO. ALL RIGHTS RESERVED.
+                        </div>
                     </div>
                 </div>
             </footer>
