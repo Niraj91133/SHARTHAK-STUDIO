@@ -4,6 +4,12 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import Image from "next/image";
 import { useMedia } from "@/hooks/useMedia";
 import { useMediaContext } from "@/context/MediaContext";
+import gsap from "gsap";
+import { ScrollToPlugin } from "gsap/dist/ScrollToPlugin";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollToPlugin);
+}
 
 function clamp01(value: number) {
   return Math.min(1, Math.max(0, value));
@@ -47,12 +53,12 @@ function useWheelSnapPaging(
       }
     };
 
-    const unlockSoon = () => {
+    const unlockSoon = (delay = 500) => {
       clearUnlockTimer();
       unlockTimerRef.current = window.setTimeout(() => {
         lockedRef.current = false;
         unlockTimerRef.current = null;
-      }, 650);
+      }, delay);
     };
 
     const onWheel = (event: WheelEvent) => {
@@ -67,7 +73,8 @@ function useWheelSnapPaging(
       const viewport = window.innerHeight || 1;
       const y = window.scrollY;
       const withinSection =
-        y >= sectionTop - 2 && y <= sectionTop + maxIndex * viewport + 2;
+        y >= sectionTop - 10 && y <= sectionTop + maxIndex * viewport + 10;
+
       if (!withinSection) return;
 
       const rawIndex = (y - sectionTop) / viewport;
@@ -87,14 +94,27 @@ function useWheelSnapPaging(
         maxIndex,
         Math.max(0, currentIndex + direction),
       );
-      const targetTop = Math.round(sectionTop + nextIndex * viewport);
+      const targetTop = sectionTop + nextIndex * viewport;
 
-      window.scrollTo({
-        top: targetTop,
-        behavior: "smooth",
-      });
-
-      unlockSoon();
+      const lenis = (window as any).lenis;
+      if (lenis) {
+        lenis.scrollTo(targetTop, {
+          duration: 1,
+          easing: (t: number) => 1 - Math.pow(1 - t, 4), // Quartic out
+          onComplete: () => {
+            unlockSoon(60);
+          }
+        });
+      } else {
+        gsap.to(window, {
+          scrollTo: { y: targetTop, autoKill: false },
+          duration: 0.8,
+          ease: "power4.out",
+          onComplete: () => {
+            unlockSoon(60);
+          }
+        });
+      }
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
@@ -339,10 +359,20 @@ export default function HeroScroll({
 
     window.setTimeout(() => {
       const top = sectionEl.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: Math.round(top + sectionEl.offsetHeight + 1),
-        behavior: prefersReducedMotion ? "auto" : "smooth",
-      });
+      const targetTop = Math.round(top + sectionEl.offsetHeight + 1);
+
+      const lenis = (window as any).lenis;
+      if (lenis) {
+        lenis.scrollTo(targetTop, {
+          duration: 1.2,
+          easing: (t: number) => 1 - Math.pow(1 - t, 4),
+        });
+      } else {
+        window.scrollTo({
+          top: targetTop,
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+      }
     }, detail ? 260 : 0);
   };
 
@@ -384,12 +414,36 @@ export default function HeroScroll({
           type="button"
           onClick={jumpToNextSection}
           aria-label="Scroll to next section"
-          className="absolute bottom-8 left-1/2 z-30 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-md"
-          style={{ border: "1px solid rgba(255,255,255,0.14)" }}
+          className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 flex flex-col items-center gap-2 group transition-all duration-300 hover:bottom-5"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/40 group-hover:text-white transition-colors">
+            (End Scroll)
+          </span>
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-md border border-white/10 shadow-2xl relative overflow-hidden"
+          >
+            {/* Animated indicating double arrow */}
+            <div className="flex flex-col items-center -space-y-2">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                className="animate-[scroll-indicator_1.5s_infinite] relative -bottom-1"
+              >
+                <path d="M6 8L12 14L18 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                className="animate-[scroll-indicator_1.5s_infinite] delay-[200ms] relative -top-1"
+              >
+                <path d="M6 8L12 14L18 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
         </button>
 
         {detail && (

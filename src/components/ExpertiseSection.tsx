@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMedia } from "@/hooks/useMedia";
+import { motion } from "framer-motion";
 
 function clampIndex(i: number, len: number) {
   return ((i % len) + len) % len;
@@ -36,7 +37,7 @@ function ExpertiseCard({
     <button
       type="button"
       onClick={onClick}
-      className="group absolute top-0 overflow-hidden bg-black text-left outline-none"
+      className="group relative overflow-hidden bg-black text-left outline-none"
       style={{
         width: "min(620px, 92vw)",
         height: "420px",
@@ -44,6 +45,7 @@ function ExpertiseCard({
           ? "1.5px solid rgba(255,255,255,0.2)"
           : "1.8px solid rgba(255,255,255,0.25)",
         borderRadius: 2,
+        pointerEvents: dimmed ? "none" : "auto",
       }}
       aria-label="Open expertise"
     >
@@ -53,7 +55,7 @@ function ExpertiseCard({
         fill
         sizes="620px"
         className={[
-          "object-cover transition duration-500",
+          "object-cover object-center transition duration-500",
           dimmed
             ? "opacity-75 group-hover:opacity-90"
             : "opacity-95 group-hover:opacity-100",
@@ -258,19 +260,20 @@ export default function ExpertiseSection() {
                   className="absolute left-1/2 top-0 will-change-transform"
                   style={{
                     zIndex: isCenter
-                      ? 100
-                      : 10 - Math.round(Math.abs(visualSlot) * 2),
+                      ? 20
+                      : 5 - Math.round(Math.abs(visualSlot) * 2),
                     opacity,
                     transition: isAnimating
                       ? "transform 520ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms cubic-bezier(0.22, 1, 0.36, 1)"
                       : "none",
-                    transform: `translateX(calc(-50% + ${x}px)) translateY(${top}px)`,
+                    transform: `translateX(calc(-50% + ${x}px)) translateY(${isCenter ? 30 : 76}px)`,
                   }}
                 >
                   <div
                     style={{
                       transform: `scale(${scale})`,
                       transformOrigin: "center top",
+                      cursor: isCenter && !isAnimating ? "pointer" : "default"
                     }}
                   >
                     <DynamicExpertiseImage
@@ -278,7 +281,11 @@ export default function ExpertiseSection() {
                       fallback={slideConfigs[idx].fallback}
                       overlaySide={overlaySide}
                       dimmed={dimmed}
-                      onClick={() => setLightboxIndex(idx)}
+                      onClick={() => {
+                        if (isCenter && !isAnimating) {
+                          setLightboxIndex(idx);
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -286,15 +293,24 @@ export default function ExpertiseSection() {
             })}
           </div>
         </div>
-
-        <div
-          className="mt-16 text-center text-6xl"
-          style={{
-            fontFamily:
-              'ui-sans-serif, "Annie Use Your Telescope", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
-          }}
-        >
-          WEDDING
+        <div className="mt-20 flex justify-center">
+          <motion.button
+            whileHover={{ scale: 1.05, y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            className="group relative flex items-center gap-4 overflow-hidden rounded-full border border-white/20 bg-black px-10 py-5 text-xs font-black uppercase tracking-[0.4em] text-white shadow-2xl transition-all hover:border-[#B6FF00]/50"
+            onClick={() => {
+              const footer = document.querySelector('footer');
+              footer?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+            <span className="relative z-10 transition-colors group-hover:text-[#B6FF00]">Contact Us Now</span>
+            <div className="relative z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white/10 group-hover:bg-[#B6FF00]">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" className="transition-colors group-hover:invert">
+                <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </motion.button>
         </div>
       </div>
 

@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import HeroScroll from "@/components/HeroScroll";
 import CameraCTASection from "@/components/CameraCTASection";
 
+import WhyChooseUsSection from "@/components/WhyChooseUsSection";
+
 // Lazy-loaded sections for performance and stability
 const GallerySection = dynamic(() => import("@/components/GallerySection"), { ssr: false });
 const LatestWorkSection = dynamic(() => import("@/components/LatestWorkSection"), { ssr: false });
@@ -24,13 +26,19 @@ export default function AppContent() {
 
     useEffect(() => {
         const lenis = new Lenis({
+            lerp: 0.1,
+            duration: 1,
             smoothWheel: true,
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            wheelMultiplier: 1.1,
+            gestureOrientation: "vertical",
+            touchMultiplier: 2,
+            infinite: false,
         });
 
-        lenisRef.current = lenis;
+        // Expose lenis globally for components like HeroScroll to use
+        (window as any).lenis = lenis;
 
+        // Sync GSAP with Lenis RAF
         function raf(time: number) {
             lenis.raf(time);
             requestAnimationFrame(raf);
@@ -40,7 +48,7 @@ export default function AppContent() {
 
         return () => {
             lenis.destroy();
-            lenisRef.current = null;
+            (window as any).lenis = null;
         };
     }, []);
 
@@ -108,44 +116,6 @@ export default function AppContent() {
                 eyebrow="SHARTHAK STUDIO"
             />
 
-
-            {/* Intro Stats Section */}
-            <section className="relative min-h-[50vh] bg-black px-6 py-24 flex items-center justify-center overflow-hidden">
-                <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-                    <div className="space-y-10">
-                        <h2 className="text-7xl md:text-9xl font-black leading-none tracking-tighter">
-                            SHARTHAK<br />STUDIO
-                        </h2>
-                        <p className="text-xl text-white/60 max-w-md leading-relaxed">
-                            We don&apos;t just take photos. We capture the soul of the moment,
-                            refined through cinematic lenses and expert hands.
-                        </p>
-                        <div className="flex gap-6">
-                            <button className="px-10 py-4 bg-white text-black font-bold uppercase tracking-[0.2em] text-xs hover:invert transition-all">
-                                View Portfolio
-                            </button>
-                            <button className="px-10 py-4 border border-white/20 text-white font-bold uppercase tracking-[0.2em] text-xs hover:bg-white hover:text-black transition-all">
-                                The Team
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                        {[
-                            { label: "YEARS", val: "10+" },
-                            { label: "WEDDINGS", val: "500+" },
-                            { label: "REELS", val: "2k+" },
-                            { label: "HAPPY LIVES", val: "∞" }
-                        ].map((stat) => (
-                            <div key={stat.label} className="p-10 border border-white/10 bg-white/[0.02] backdrop-blur-xl group hover:bg-white hover:text-black transition-all duration-700 cursor-default">
-                                <div className="text-5xl font-black transition-colors">{stat.val}</div>
-                                <div className="text-[10px] uppercase tracking-[0.4em] opacity-40 group-hover:opacity-100 transition-colors mt-3">{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             {/* Feature Slider */}
             <section className="py-24 bg-white text-black overflow-hidden relative">
                 <div className="flex animate-marquee whitespace-nowrap will-change-transform">
@@ -170,6 +140,8 @@ export default function AppContent() {
             <CoupleShootGame />
 
             <CameraCTASection />
+
+            <WhyChooseUsSection />
 
             <InfiniteStripsCTASection />
 

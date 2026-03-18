@@ -528,3 +528,19 @@ html[data-game="playing"] .hero-scroll__header {
     transform: translateX(-50%);
   }
 }
+
+@keyframes scroll-indicator {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+}
